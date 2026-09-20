@@ -320,7 +320,6 @@ void collect_geometry(const std::vector<TlvNode>& es, GeometryBuilder& b) {
               ParsedAttrDictionaries all_dicts;
               extract_attribute_dictionaries(x.payload, all_dicts);
               for (auto& [dict_name, entries] : all_dicts) {
-                if (dict_name == "SU_InstanceSet") continue;
                 if (dict_name == "dynamic_attributes") {
                   i.properties = stringify_attr_dict(entries);
                 }

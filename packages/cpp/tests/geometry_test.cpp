@@ -151,13 +151,16 @@ TEST(Geometry, AttributeDictionariesGroupEntriesByDictionaryName) {
 TEST(Geometry, AttributeDictionariesKeepTwoDictionariesDistinct) {
   // properties is the stringified dynamic_attributes view. attribute_dicts
   // keeps every named dictionary with native types, including
-  // dynamic_attributes - matching Python's Instance.attribute_dictionaries.
+  // dynamic_attributes and SU_InstanceSet - matching Python's
+  // Instance.attribute_dictionaries. Scene drops those two via
+  // plugin_attribute_dictionaries().
   auto builder = geometry(tlv(
       "6419",
       tlv("D007",
           tlv("DC05",
               concat({
                   named_dict("dynamic_attributes", entry("width", tlv("AD38", test::bytes("10")))),
+                  named_dict("SU_InstanceSet", entry("Owner", tlv("AD38", test::bytes("")))),
                   named_dict("FrameBuilder", entry("name", tlv("AD38", test::bytes("W-2")))),
               })))));
   const auto& instance = builder.instances.at(0);
@@ -165,6 +168,12 @@ TEST(Geometry, AttributeDictionariesKeepTwoDictionariesDistinct) {
   EXPECT_EQ(instance.attribute_dicts.at("FrameBuilder").at("name"), "W-2");
   ASSERT_EQ(instance.attribute_dicts.count("dynamic_attributes"), 1u);
   EXPECT_EQ(instance.attribute_dicts.at("dynamic_attributes").at("width"), "10");
+  ASSERT_EQ(instance.attribute_dicts.count("SU_InstanceSet"), 1u);
+  EXPECT_EQ(instance.attribute_dicts.at("SU_InstanceSet").at("Owner"), "");
+  auto plugin = plugin_attribute_dictionaries(instance.attribute_dicts);
+  EXPECT_EQ(plugin.count("dynamic_attributes"), 0u);
+  EXPECT_EQ(plugin.count("SU_InstanceSet"), 0u);
+  EXPECT_EQ(plugin.at("FrameBuilder").at("name"), "W-2");
 }
 
 TEST(Geometry, AttributeDictionariesDecodeLengthAndFloatAsDistinctTagsBothF64) {
@@ -195,7 +204,7 @@ TEST(Geometry, AttributeDictionariesDecodeIntegerValue) {
 TEST(Geometry, AttributeDictionariesDecodeEmptyA438AsNull) {
   auto dicts = attribute_dicts_for(named_dict("fbd-einfo", entry("child_thickness", {})));
   EXPECT_EQ(dicts.at("fbd-einfo").at("child_thickness").kind, ParsedAttribute::Kind::Null);
-  EXPECT_EQ(dicts.at("fbd-einfo").at("child_thickness"), "");
+  EXPECT_EQ(dicts.at("fbd-einfo").at("child_thickness").to_string(), "");
 }
 
 TEST(Geometry, AttributeDictionariesDecodePoint3dAndVector3d) {
@@ -263,7 +272,7 @@ TEST(Geometry, AttributeDictionariesLeaveUnrecognizedValueTagAsNull) {
   auto dicts = attribute_dicts_for(
       named_dict("fbd-einfo", entry("mystery", tlv("EE99", ByteBuffer{0x01, 0x02}))));
   EXPECT_EQ(dicts.at("fbd-einfo").at("mystery").kind, ParsedAttribute::Kind::Null);
-  EXPECT_EQ(dicts.at("fbd-einfo").at("mystery"), "");
+  EXPECT_EQ(dicts.at("fbd-einfo").at("mystery").to_string(), "");
 }
 
 }  // namespace

@@ -48,12 +48,11 @@ struct RawInstance {
   // Components data) - the same backward-compatible view Python's
   // extract_dynamic_properties() exposes as `properties`.
   std::map<std::string, std::string> properties;
-  // Every OTHER attribute dictionary this instance carries, keyed by the
-  // dictionary's own declared name (VFF tag B436) - a third-party plugin
-  // (steel-detailing tool, etc.) commonly attaches its own richer
-  // per-instance data under its own dictionary name instead of
-  // dynamic_attributes. SU_InstanceSet (SketchUp's own always-present,
-  // always-empty boilerplate) is excluded, same as dynamic_attributes.
+  // Every named dictionary this instance carries (including
+  // dynamic_attributes and SU_InstanceSet), keyed by VFF tag B436 /
+  // CAttributeNamed's declared name. Values keep native types. Scene /
+  // JSON / IFC then drop DC and SU_InstanceSet via
+  // plugin_attribute_dictionaries(), matching Python's scene.py.
   ParsedAttrDictionaries attribute_dicts;
   bool hidden{};
 };
@@ -318,4 +317,15 @@ struct EarPoint {
 std::vector<std::array<EntityId, 3>> earcut_2d(std::vector<std::vector<EarPoint>> loops);
 void emit_log(const ParseOptions&, LogLevel, const std::string&);
 void emit_progress(const ParseOptions&, ParseStage, std::uint64_t, std::uint64_t);
+
+// Scene / JSON / IFC omit SketchUp's own DC view and SU_InstanceSet,
+// matching Python scene.py. The model itself keeps every named dictionary.
+inline ParsedAttrDictionaries plugin_attribute_dictionaries(const ParsedAttrDictionaries& src) {
+  ParsedAttrDictionaries out;
+  for (const auto& d : src) {
+    if (d.first == "dynamic_attributes" || d.first == "SU_InstanceSet") continue;
+    out.emplace(d.first, d.second);
+  }
+  return out;
+}
 }  // namespace openskp

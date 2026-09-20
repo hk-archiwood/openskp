@@ -17,9 +17,12 @@ point/vector, `AE38` array) then immediately formatted them as strings,
 so a file that saved `angle = -7` came back as `"-7"`. Legacy
 `CAttributeNamed` did the same, and never copied non-DC dictionaries onto
 the instance at all. `Instance::attribute_dictionaries` is now
-`ParsedAttrDictionaries`; scene/JSON/IFC still stringify. Regression tests
-lock VFF integer/float/point/array decode and a writer round-trip of
-int32/double/string.
+`ParsedAttrDictionaries` (a breaking C++ type change for callers that
+treated every value as a string — use `to_string()` / `kind`);
+scene/JSON/IFC still stringify and still omit `dynamic_attributes` /
+`SU_InstanceSet`. The model keeps those dictionaries, matching Python.
+Regression tests lock VFF integer/float/point/array decode and a writer
+round-trip of int32/double/string.
 
 ### Added — Read a `.frag` file back (TypeScript, .NET, Dart, C++) - all 5 languages now
 

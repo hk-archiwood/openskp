@@ -230,6 +230,8 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
           active.erase(*i.ref_idx);
         }
       }
+      auto plugin_dicts =
+          stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts));
       InstanceNode node{display_name,
                         def_name,
                         child_layer,
@@ -237,10 +239,8 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
                          mat.size() > 11 ? mat[11] * 25.4 : 0},
                         i.properties,
                         std::move(nested),
-                        stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts))};
-      path_updates[child_path] = {
-          i.properties, display_name,
-          stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts))};
+                        plugin_dicts};
+      path_updates[child_path] = {i.properties, display_name, plugin_dicts};
       children.push_back(std::move(node));
       if (++instance_counter % progress_interval == 0)
         emit_progress(o, ParseStage::build_scene, instance_counter, instance_counter);

@@ -76,27 +76,20 @@ struct ParsedAttribute {
 };
 
 inline bool operator==(const ParsedAttribute& a, const std::string& s) {
-  if (a.kind == ParsedAttribute::Kind::String) return a.text == s;
-  if (a.kind == ParsedAttribute::Kind::Null) return s.empty();
-  return false;
+  return a.kind == ParsedAttribute::Kind::String && a.text == s;
 }
 inline bool operator==(const std::string& s, const ParsedAttribute& a) { return a == s; }
 inline bool operator==(const ParsedAttribute& a, const char* s) {
-  return a == std::string(s == nullptr ? "" : s);
+  return s != nullptr && a == std::string(s);
 }
 inline bool operator==(const char* s, const ParsedAttribute& a) { return a == s; }
+inline bool operator!=(const ParsedAttribute& a, const std::string& s) { return !(a == s); }
+inline bool operator!=(const std::string& s, const ParsedAttribute& a) { return !(a == s); }
+inline bool operator!=(const ParsedAttribute& a, const char* s) { return !(a == s); }
+inline bool operator!=(const char* s, const ParsedAttribute& a) { return !(a == s); }
 
 using ParsedAttrDict = std::map<std::string, ParsedAttribute>;
 using ParsedAttrDictionaries = std::map<std::string, ParsedAttrDict>;
-
-inline ParsedAttrDictionaries plugin_attribute_dictionaries(const ParsedAttrDictionaries& src) {
-  ParsedAttrDictionaries out;
-  for (const auto& d : src) {
-    if (d.first == "dynamic_attributes" || d.first == "SU_InstanceSet") continue;
-    out.emplace(d.first, d.second);
-  }
-  return out;
-}
 
 std::map<std::string, std::string> stringify_attr_dict(const ParsedAttrDict& src);
 std::map<std::string, std::map<std::string, std::string>> stringify_attr_dictionaries(
