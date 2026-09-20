@@ -195,11 +195,15 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
       // "Group#1"-style placeholder, then finally the internal index.
       std::optional<std::string> name_override;
       for (auto& [dict_name, entries] : i.attribute_dicts) {
+        if (dict_name == "dynamic_attributes" || dict_name == "SU_InstanceSet") continue;
         for (const char* key : {"name", "label", "code"}) {
           auto it = entries.find(key);
-          if (it != entries.end() && !it->second.empty()) {
-            name_override = it->second;
-            break;
+          if (it != entries.end()) {
+            std::string s = it->second.to_string();
+            if (!s.empty()) {
+              name_override = std::move(s);
+              break;
+            }
           }
         }
         if (name_override) break;
@@ -233,8 +237,10 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
                          mat.size() > 11 ? mat[11] * 25.4 : 0},
                         i.properties,
                         std::move(nested),
-                        i.attribute_dicts};
-      path_updates[child_path] = {i.properties, display_name, i.attribute_dicts};
+                        stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts))};
+      path_updates[child_path] = {
+          i.properties, display_name,
+          stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts))};
       children.push_back(std::move(node));
       if (++instance_counter % progress_interval == 0)
         emit_progress(o, ParseStage::build_scene, instance_counter, instance_counter);

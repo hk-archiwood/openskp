@@ -54,7 +54,7 @@ struct RawInstance {
   // per-instance data under its own dictionary name instead of
   // dynamic_attributes. SU_InstanceSet (SketchUp's own always-present,
   // always-empty boilerplate) is excluded, same as dynamic_attributes.
-  std::map<std::string, std::map<std::string, std::string>> attribute_dicts;
+  ParsedAttrDictionaries attribute_dicts;
   bool hidden{};
 };
 
@@ -221,9 +221,8 @@ struct V {
   // archive), so 0 can't double as a sentinel for "absent."
   std::optional<std::uint64_t> attrs;
   // Only populated for "dict" (CAttributeNamed) entities: this
-  // dictionary's own key/value pairs, already stringified (see
-  // Archive::typed()).
-  std::map<std::string, std::string> entries;
+  // dictionary's own key/value pairs, already typed (see Archive::typed()).
+  ParsedAttrDict entries;
   std::uint64_t tex_dib{};
   bool sense{};
   bool faces_camera{};

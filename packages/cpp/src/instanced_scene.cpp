@@ -284,11 +284,15 @@ InstancedScene build_instanced_scene_raw(RawParsed&& p, const ParseOptions& o) {
       // "Group#1"-style placeholder, then finally the internal index.
       std::optional<std::string> name_override;
       for (auto& [dict_name, entries] : i.attribute_dicts) {
+        if (dict_name == "dynamic_attributes" || dict_name == "SU_InstanceSet") continue;
         for (const char* key : {"name", "label", "code"}) {
           auto it = entries.find(key);
-          if (it != entries.end() && !it->second.empty()) {
-            name_override = it->second;
-            break;
+          if (it != entries.end()) {
+            std::string s = it->second.to_string();
+            if (!s.empty()) {
+              name_override = std::move(s);
+              break;
+            }
           }
         }
         if (name_override) break;
@@ -311,7 +315,8 @@ InstancedScene build_instanced_scene_raw(RawParsed&& p, const ParseOptions& o) {
                           new_matrix.size() > 10 ? new_matrix[10] * kInchesToMm : 0,
                           new_matrix.size() > 11 ? new_matrix[11] * kInchesToMm : 0};
       node.properties = i.properties;
-      node.attribute_dictionaries = i.attribute_dicts;
+      node.attribute_dictionaries =
+          stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts));
 
       if (i.ref_idx) {
         if (active.count(*i.ref_idx)) {
