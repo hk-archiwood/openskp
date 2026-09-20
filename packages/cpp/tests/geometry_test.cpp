@@ -149,11 +149,9 @@ TEST(Geometry, AttributeDictionariesGroupEntriesByDictionaryName) {
 }
 
 TEST(Geometry, AttributeDictionariesKeepTwoDictionariesDistinct) {
-  // properties is the stringified dynamic_attributes view. attribute_dicts
-  // keeps every named dictionary with native types, including
-  // dynamic_attributes and SU_InstanceSet - matching Python's
-  // Instance.attribute_dictionaries. Scene drops those two via
-  // plugin_attribute_dictionaries().
+  // Every named dictionary lands on attribute_dicts with native types.
+  // properties remains the existing stringified view of a dictionary
+  // named dynamic_attributes when that name happens to be present.
   auto builder = geometry(tlv(
       "6419",
       tlv("D007",
@@ -170,10 +168,6 @@ TEST(Geometry, AttributeDictionariesKeepTwoDictionariesDistinct) {
   EXPECT_EQ(instance.attribute_dicts.at("dynamic_attributes").at("width"), "10");
   ASSERT_EQ(instance.attribute_dicts.count("SU_InstanceSet"), 1u);
   EXPECT_EQ(instance.attribute_dicts.at("SU_InstanceSet").at("Owner"), "");
-  auto plugin = plugin_attribute_dictionaries(instance.attribute_dicts);
-  EXPECT_EQ(plugin.count("dynamic_attributes"), 0u);
-  EXPECT_EQ(plugin.count("SU_InstanceSet"), 0u);
-  EXPECT_EQ(plugin.at("FrameBuilder").at("name"), "W-2");
 }
 
 TEST(Geometry, AttributeDictionariesDecodeLengthAndFloatAsDistinctTagsBothF64) {

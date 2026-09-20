@@ -142,7 +142,7 @@ static bool is_prop_container_tag(const std::string& t) {
 // stringify in one pass because scene/JSON/IFC take strings - that
 // discarded the type SketchUp stored (A738 integer became "-7"). The
 // typed value lives on Instance::attribute_dictionaries;
-// stringify_attr_dictionaries() is the scene.py equivalent. An A438
+// stringify_attr_dictionaries() is for scene/JSON/IFC strings. An A438
 // with no children (Python: None) or an unrecognized value tag is Null
 // - a real, present key, not a missing key.
 static ParsedAttribute decode_a438_value(const ByteBuffer& p, size_t a, size_t z) {

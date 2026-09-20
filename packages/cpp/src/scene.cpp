@@ -188,14 +188,14 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
       const bool def_name_is_real = !def_name.empty() && !is_generic_definition_name(def_name);
 
       // Same fallback order as instanced_scene.cpp: attribute-dict
-      // override (any OTHER dictionary the instance carries, whichever
-      // plugin wrote it - "name"/"label"/"code", first dictionary and
-      // first key found wins), then the instance's own name, then the
-      // definition's own name if it's not itself an auto-generated
-      // "Group#1"-style placeholder, then finally the internal index.
+      // override ("name"/"label"/"code" on any dictionary, first
+      // dictionary and first key found wins), then the instance's own
+      // name, then the definition's own name if it's not itself an
+      // auto-generated "Group#1"-style placeholder, then finally the
+      // internal index.
       std::optional<std::string> name_override;
-      for (auto& [dict_name, entries] : i.attribute_dicts) {
-        if (dict_name == "dynamic_attributes" || dict_name == "SU_InstanceSet") continue;
+      for (const auto& dict : i.attribute_dicts) {
+        const auto& entries = dict.second;
         for (const char* key : {"name", "label", "code"}) {
           auto it = entries.find(key);
           if (it != entries.end()) {
@@ -230,8 +230,7 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
           active.erase(*i.ref_idx);
         }
       }
-      auto plugin_dicts =
-          stringify_attr_dictionaries(plugin_attribute_dictionaries(i.attribute_dicts));
+      auto dicts = stringify_attr_dictionaries(i.attribute_dicts);
       InstanceNode node{display_name,
                         def_name,
                         child_layer,
@@ -239,8 +238,8 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
                          mat.size() > 11 ? mat[11] * 25.4 : 0},
                         i.properties,
                         std::move(nested),
-                        plugin_dicts};
-      path_updates[child_path] = {i.properties, display_name, plugin_dicts};
+                        dicts};
+      path_updates[child_path] = {i.properties, display_name, dicts};
       children.push_back(std::move(node));
       if (++instance_counter % progress_interval == 0)
         emit_progress(o, ParseStage::build_scene, instance_counter, instance_counter);

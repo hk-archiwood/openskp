@@ -19,10 +19,10 @@ so a file that saved `angle = -7` came back as `"-7"`. Legacy
 the instance at all. `Instance::attribute_dictionaries` is now
 `ParsedAttrDictionaries` (a breaking C++ type change for callers that
 treated every value as a string — use `to_string()` / `kind`);
-scene/JSON/IFC still stringify and still omit `dynamic_attributes` /
-`SU_InstanceSet`. The model keeps those dictionaries, matching Python.
-Regression tests lock VFF integer/float/point/array decode and a writer
-round-trip of int32/double/string.
+scene/JSON/IFC still stringify every named dictionary (the reader does
+not skip dictionaries by name). Regression tests lock VFF
+integer/float/point/array decode and a writer round-trip of
+int32/double/string.
 
 ### Added — Read a `.frag` file back (TypeScript, .NET, Dart, C++) - all 5 languages now
 

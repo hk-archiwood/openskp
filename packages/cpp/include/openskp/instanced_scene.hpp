@@ -78,11 +78,9 @@ struct InstancedNode {
   };
   std::array<double, 3> position_mm{};
   std::map<std::string, std::string> properties;
-  /// Every OTHER attribute dictionary this instance carries, keyed by the
-  /// dictionary's own name - a third-party plugin (BIM/steel-detailing
-  /// tool, etc.) commonly attaches its own richer per-instance data under
-  /// its own dictionary name instead of `properties` (SketchUp's own
-  /// Dynamic Components data).
+  /// Every named attribute dictionary this instance carries, keyed by
+  /// the dictionary's own declared name. Scene values are stringified;
+  /// the model keeps native types.
   std::map<std::string, std::map<std::string, std::string>> attribute_dictionaries;
   std::optional<std::string> mesh_resource_id;
   std::vector<InstancedNode> children;

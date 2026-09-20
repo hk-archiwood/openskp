@@ -25,9 +25,11 @@ using Color4 = std::array<std::uint8_t, 4>;
 /// One attribute-dictionary value, matching Python's
 /// `_decode_vff_attr_value` / `_read_attr_named`: `None`, `str`, `int`,
 /// `float` (both VFF `A938` Float and `AF38` Length), a 3-tuple for
-/// Point3d/Vector3d, or a nested list. Scene / JSON / IFC still stringify
-/// this the way Python's `scene.py` does; `Instance::properties` stays a
-/// `map<string,string>` view of `dynamic_attributes`.
+/// Point3d/Vector3d, or a nested list. Scene / JSON / IFC stringify
+/// every named dictionary; the model keeps types.
+/// `Instance::properties` stays a `map<string,string>` view of a
+/// dictionary named `dynamic_attributes` when that name is present
+/// (existing OpenSKP API).
 struct ParsedAttribute {
   enum class Kind : std::uint8_t { Null, String, Integer, Float, Vec, Array };
   Kind kind = Kind::Null;
