@@ -66,10 +66,15 @@ std::array<double, 9> invert_3x3(const std::array<double, 9>& m) {
   };
 }
 
+constexpr double kUvVerticalTolerance = 1e-3;
+
 std::pair<Point3, Point3> face_uv_basis(Point3 n) {
   double cx = -n[1], cy = n[0];
   double clen = std::sqrt(cx * cx + cy * cy);
-  if (clen < 1e-9) return {Point3{1.0, 0.0, 0.0}, Point3{0.0, n[2] >= 0 ? 1.0 : -1.0, 0.0}};
+  if (clen < kUvVerticalTolerance) {
+    Point3 xr = n[2] >= 0 ? Point3{1.0, 0.0, 0.0} : Point3{-1.0, 0.0, 0.0};
+    return {xr, Point3{0.0, 1.0, 0.0}};
+  }
   Point3 xr{cx / clen, cy / clen, 0.0};
   Point3 yr{n[1] * xr[2] - n[2] * xr[1], n[2] * xr[0] - n[0] * xr[2], n[0] * xr[1] - n[1] * xr[0]};
   return {xr, yr};
@@ -163,6 +168,11 @@ std::map<std::string, int> replay_layers(SkpBuilder& builder, const SkpModel& mo
     LayerOptions options;
     options.color = Color4{layer.color[0], layer.color[1], layer.color[2], 255};
     options.hidden = layer.hidden;
+    for (const auto& d : layer.attribute_dictionaries) {
+      AttributeDict bag;
+      for (const auto& kv : d.second) bag[kv.first] = kv.second;
+      options.extra_dictionaries[d.first] = std::move(bag);
+    }
     slots[layer.name] = builder.add_layer(layer.name, options);
   }
   return slots;
