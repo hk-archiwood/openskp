@@ -26,6 +26,16 @@ bytes of the definition tail, and then cached that 7 for every later
 guide in the file (this project's writer, and real SketchUp 2025, use 4).
 The strong-tag pass is unchanged; the null pass now prefers 4. Same
 change in Python's `legacy._read_constructionline`.
+### Added — Read VFF (2021+) construction lines/points (Python + C++)
+
+VFF files store guide lines under definition list `9113` → `6942` / `6A42`
+(same 8 doubles as classic `CConstructionLine`) and guide points under
+`9213` → `6C42` / `6D42`. Those tags are now containers in the TLV walker
+(`_core.CONTAINER_TAGS` / `tlv.cpp`), and the geometry collectors fill
+`Definition.construction_lines` / `.construction_points`. Ground-truthed
+against a SketchUp-authored VFF layout; tests lock the tag layout with
+synthetic TLV so the fixture does not have to carry a real document path
+or template.
 ### Fixed — C++: face UV basis and pin scale now match Python / real SketchUp
 
 Python's writer already parameterized a face's texture matrix in SketchUp's
