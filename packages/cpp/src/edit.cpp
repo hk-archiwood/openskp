@@ -444,7 +444,8 @@ void replay_body(Target& target, const Definition& defn,
     try {
       target.add_construction_point(cp.position);
     } catch (const SkpWriteError& exc) {
-      warnings.push_back(context + ": construction point skipped (" + std::string(exc.what()) + ")");
+      warnings.push_back(context + ": construction point skipped (" + std::string(exc.what()) +
+                         ")");
     }
   }
   for (const auto& cl : defn.construction_lines) {
