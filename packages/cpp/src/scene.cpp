@@ -29,6 +29,15 @@ bool is_generic_definition_name(const std::string& name) {
   static const std::regex kPattern(R"(^(?:Group|Component)\d*#\d+$)");
   return std::regex_match(name, kPattern);
 }
+
+// Scene nodes omit SketchUp's own dictionaries. dynamic_attributes is
+// already on `properties`. SU_InstanceSet is the always-present
+// Owner/Status boilerplate. Model-level Instance::attribute_dictionaries
+// keeps both; this filter stays here, matching scene.py. Duplicated in
+// instanced_scene.cpp rather than shared, same as the helper above.
+bool omitted_from_scene(const std::string& dict_name) {
+  return dict_name == "dynamic_attributes" || dict_name == "SU_InstanceSet";
+}
 }  // namespace
 
 Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
@@ -188,13 +197,14 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
       const bool def_name_is_real = !def_name.empty() && !is_generic_definition_name(def_name);
 
       // Same fallback order as instanced_scene.cpp: attribute-dict
-      // override ("name"/"label"/"code" on any dictionary, first
-      // dictionary and first key found wins), then the instance's own
-      // name, then the definition's own name if it's not itself an
-      // auto-generated "Group#1"-style placeholder, then finally the
-      // internal index.
+      // override ("name"/"label"/"code" on any dictionary except
+      // dynamic_attributes and SU_InstanceSet, first dictionary and
+      // first key found wins), then the instance's own name, then the
+      // definition's own name if it's not itself an auto-generated
+      // "Group#1"-style placeholder, then finally the internal index.
       std::optional<std::string> name_override;
       for (const auto& dict : i.attribute_dicts) {
+        if (omitted_from_scene(dict.first)) continue;
         const auto& entries = dict.second;
         for (const char* key : {"name", "label", "code"}) {
           auto it = entries.find(key);
@@ -230,7 +240,11 @@ Scene build_scene_raw(RawParsed&& p, const ParseOptions& o) {
           active.erase(*i.ref_idx);
         }
       }
-      auto dicts = stringify_attr_dictionaries(i.attribute_dicts);
+      std::map<std::string, std::map<std::string, std::string>> dicts;
+      for (const auto& dict : i.attribute_dicts) {
+        if (omitted_from_scene(dict.first)) continue;
+        dicts.emplace(dict.first, stringify_attr_dict(dict.second));
+      }
       InstanceNode node{display_name,
                         def_name,
                         child_layer,
