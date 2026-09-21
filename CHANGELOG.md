@@ -26,6 +26,16 @@ matches Python on all four copies of the basis, stores applied size per
 textured-material slot, and scales pins in both `SkpBuilder::add_face` and
 `ComponentDefinitionBuilder::add_face`. Regression tests lock the vertex-order
 matrix, the downward `(−X, +Y)` matrix, and a 10-inch tile's 5× scale.
+### Added — C++: named dictionaries on `CLayer`
+
+`SkpBuilder::add_layer` now accepts `LayerOptions::extra_dictionaries` and
+writes them as `CAttributeNamed` records on the layer. `parse()` copies
+every named dictionary on a legacy `CLayer` onto
+`Layer::attribute_dictionaries` (string maps, same contract as
+`Instance::attribute_dictionaries`). The reader does not special-case
+dictionary names. VFF layers still have no attribute slot, so this is
+empty there. `edit()` replays the dictionaries so a round-trip through
+the writer keeps them.
 
 ### Added — Read a `.frag` file back (TypeScript, .NET, Dart, C++) - all 5 languages now
 
