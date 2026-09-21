@@ -1831,12 +1831,10 @@ void ComponentDefinitionBuilder::add_face(const std::vector<Point3>& points,
   detail::AttributeDictList dicts;
   if (!options.attributes.empty())
     dicts.emplace_back(options.attribute_dict_name, options.attributes);
-  auto front_uv =
-      detail::scale_pins(options.front_uv, impl_->skp->impl_->applied_sizes,
-                         options.material.value_or(0));
-  auto back_uv =
-      detail::scale_pins(options.back_uv, impl_->skp->impl_->applied_sizes,
-                         options.back_material.value_or(0));
+  auto front_uv = detail::scale_pins(options.front_uv, impl_->skp->impl_->applied_sizes,
+                                     options.material.value_or(0));
+  auto back_uv = detail::scale_pins(options.back_uv, impl_->skp->impl_->applied_sizes,
+                                    options.back_material.value_or(0));
   impl_->new_entity_count += detail::write_face_or_triangulate(
       *impl_->writer, points, impl_->vertex_slots, impl_->edge_registry,
       options.material.value_or(0), options.layer.value_or(0), options.back_material.value_or(0),
@@ -2125,8 +2123,8 @@ void SkpBuilder::add_face(const std::vector<Point3>& points, const FaceOptions& 
     dicts.emplace_back(options.attribute_dict_name, options.attributes);
   auto front_uv =
       detail::scale_pins(options.front_uv, impl_->applied_sizes, options.material.value_or(0));
-  auto back_uv = detail::scale_pins(options.back_uv, impl_->applied_sizes,
-                                   options.back_material.value_or(0));
+  auto back_uv =
+      detail::scale_pins(options.back_uv, impl_->applied_sizes, options.back_material.value_or(0));
   impl_->new_entity_count += detail::write_face_or_triangulate(
       *impl_->geometry_writer, points, impl_->vertex_slots, impl_->edge_registry,
       options.material.value_or(0), options.layer.value_or(0), options.back_material.value_or(0),
