@@ -480,10 +480,9 @@ struct Archive {
   // Extra CLayer records past declared layer_count (v18: count=1 custom
   // tag, then Layer0). Skip null separators; stop at the definition-list
   // anchor. `unmatched_class_ref` only on the throwaway probe.
-  void collect_trailing_layers(
-      std::vector<uint64_t>* slots_out,
-      std::vector<std::pair<uint64_t, std::shared_ptr<V>>>* layers_out,
-      bool unmatched_class_ref = false) {
+  void collect_trailing_layers(std::vector<uint64_t>* slots_out,
+                               std::vector<std::pair<uint64_t, std::shared_ptr<V>>>* layers_out,
+                               bool unmatched_class_ref = false) {
     while (r.p + 2 <= r.d.size()) {
       auto tag = read_u16(r.d, r.p);
       if (tag == 0) {
