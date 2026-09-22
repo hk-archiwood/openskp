@@ -1232,19 +1232,6 @@ ParsedAttrDictionaries extract_legacy_attribute_dictionaries(
   return out;
 }
 
-std::map<std::string, std::map<std::string, std::string>> extract_legacy_attribute_dictionaries(
-    std::optional<uint64_t> attrs_slot, const std::unordered_map<uint64_t, Entry>& slots) {
-  if (!attrs_slot) return {};
-  auto ai = slots.find(*attrs_slot);
-  if (ai == slots.end() || !ai->second.v) return {};
-  std::map<std::string, std::map<std::string, std::string>> out;
-  for (auto& ent : ai->second.v->ents) {
-    auto& ev = std::get<2>(ent);
-    if (ev && ev->k == "dict" && !ev->name.empty()) out[ev->name] = ev->entries;
-  }
-  return out;
-}
-
 void fill(GeometryBuilder& b,
           const std::vector<std::tuple<uint64_t, std::string, std::shared_ptr<V>>>& ents,
           const std::unordered_map<uint64_t, Entry>& slots) {
@@ -1638,7 +1625,13 @@ RawParsed parse_legacy(const ByteBuffer& data, const ParseOptions& o) {
                                           uint8_t(l.second->b)};
       out.layer_hidden[l.second->name] = l.second->hidden != 0;
       auto dicts = extract_legacy_attribute_dictionaries(l.second->attrs, ar.slots);
-      if (!dicts.empty()) out.layer_attribute_dictionaries[l.second->name] = std::move(dicts);
+      // Layer::attribute_dictionaries stays string-typed by design (matches
+      // Instance's own pre-#368 contract for the model-level scene/JSON/IFC
+      // consumers PR #369 wired it into) - the shared extraction above
+      // returns typed ParsedAttrDictionaries now, so stringify here rather
+      // than keeping a second, near-duplicate string-typed extractor.
+      if (!dicts.empty())
+        out.layer_attribute_dictionaries[l.second->name] = stringify_attr_dictionaries(dicts);
     }
     if (!out.layer_colors.count("Layer0")) {
       out.layer_order.push_back("Layer0");

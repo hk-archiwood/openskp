@@ -40,30 +40,35 @@ struct ParsedAttribute {
   std::vector<ParsedAttribute> array;
 
   static ParsedAttribute null() { return {}; }
+
   static ParsedAttribute from_string(std::string s) {
     ParsedAttribute v;
     v.kind = Kind::String;
     v.text = std::move(s);
     return v;
   }
+
   static ParsedAttribute from_integer(std::int64_t n) {
     ParsedAttribute v;
     v.kind = Kind::Integer;
     v.integer = n;
     return v;
   }
+
   static ParsedAttribute from_float(double n) {
     ParsedAttribute v;
     v.kind = Kind::Float;
     v.number = n;
     return v;
   }
+
   static ParsedAttribute from_vec(Vec3 p) {
     ParsedAttribute v;
     v.kind = Kind::Vec;
     v.vec = p;
     return v;
   }
+
   static ParsedAttribute from_array(std::vector<ParsedAttribute> items) {
     ParsedAttribute v;
     v.kind = Kind::Array;
@@ -74,20 +79,28 @@ struct ParsedAttribute {
   /// Same formatting as Python's `_stringify_vff_attr_value`.
   std::string to_string() const;
   bool operator==(const ParsedAttribute& o) const;
+
   bool operator!=(const ParsedAttribute& o) const { return !(*this == o); }
 };
 
 inline bool operator==(const ParsedAttribute& a, const std::string& s) {
   return a.kind == ParsedAttribute::Kind::String && a.text == s;
 }
+
 inline bool operator==(const std::string& s, const ParsedAttribute& a) { return a == s; }
+
 inline bool operator==(const ParsedAttribute& a, const char* s) {
   return s != nullptr && a == std::string(s);
 }
+
 inline bool operator==(const char* s, const ParsedAttribute& a) { return a == s; }
+
 inline bool operator!=(const ParsedAttribute& a, const std::string& s) { return !(a == s); }
+
 inline bool operator!=(const std::string& s, const ParsedAttribute& a) { return !(a == s); }
+
 inline bool operator!=(const ParsedAttribute& a, const char* s) { return !(a == s); }
+
 inline bool operator!=(const char* s, const ParsedAttribute& a) { return !(a == s); }
 
 using ParsedAttrDict = std::map<std::string, ParsedAttribute>;

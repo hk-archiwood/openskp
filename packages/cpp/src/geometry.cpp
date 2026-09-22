@@ -162,8 +162,7 @@ static ParsedAttribute decode_a438_value(const ByteBuffer& p, size_t a, size_t z
     return ParsedAttribute::from_integer(read_i32(p, sa));
   }
   if ((tag == "B438" || tag == "B538") && sz - sa == 24) {
-    return ParsedAttribute::from_vec(
-        {read_f64(p, sa), read_f64(p, sa + 8), read_f64(p, sa + 16)});
+    return ParsedAttribute::from_vec({read_f64(p, sa), read_f64(p, sa + 8), read_f64(p, sa + 16)});
   }
   if (tag == "AE38") {
     std::vector<ParsedAttribute> items;
