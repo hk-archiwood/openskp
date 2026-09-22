@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — legacy: zero-material v18 files with a custom layer ahead of Layer0
+
+Legacy files with fewer than two materials bootstrap the slot base by walking
+the layer list and treating the next object as a back-ref to the active layer.
+Some SketchUp 2018 saves list a custom tag first (`layer_count` = 1) and write
+Layer0 after a 16-byte colour-layer extension (12 zero bytes + u32). The
+reader consumed only the 21-byte colour tail, so the probe landed on padding
+and failed with `base probe: anchor resolved to` before any geometry. Colour
+`CLayer` records now skip that extension when it precedes another `CLayer`,
+and both the probe and the model walk keep reading `CLayer` records past the
+declared count (same trailing skip the walk already used for v20 separators).
+Python, TypeScript, .NET, Dart, and C++.
+
 ### Added — C++: write construction lines/points inside component definitions
 
 `ComponentDefinitionBuilder` now has `add_construction_point` /
