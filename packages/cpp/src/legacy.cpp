@@ -431,6 +431,73 @@ struct Archive {
     }
   }
 
+  // 0xffff CLayer, a class-ref to a CLayer already in class_slot, or — when
+  // `unmatched_class_ref` — any short 0x8000 class-ref. The last form is
+  // only for the throwaway slot-base probe, which numbers from 1<<20 so
+  // the file's 0x8000|real_slot will not match class_slot.
+  bool clayer_record_at(size_t at, bool unmatched_class_ref = false) const {
+    if (at + 2 > r.d.size()) return false;
+    auto tag = read_u16(r.d, at);
+    if (tag == 0xffff && at + 12 <= r.d.size() && read_u16(r.d, at + 4) == 6 &&
+        std::equal(r.d.begin() + at + 6, r.d.begin() + at + 12, "CLayer"))
+      return true;
+    auto lay_cs = class_slot.find("CLayer");
+    if (lay_cs != class_slot.end() && is_class_ref(r.d, at, lay_cs->second)) return true;
+    return unmatched_class_ref && (tag & 0x8000) && tag != 0xffff;
+  }
+
+  // Colour CLayer ends in a 21-byte tail. Some v18 zero-material files
+  // (custom tag listed first, then Layer0) write 12 zero bytes + u32 after
+  // that, then another CLayer. Skip those 16 bytes only when they precede
+  // a CLayer; leave a definition-list back-ref alone.
+  void skip_clayer_colour_ext() {
+    constexpr size_t kPad = 12;
+    constexpr size_t kExt = 16;
+    if (r.p + kExt + 2 > r.d.size()) return;
+    for (size_t i = 0; i < kPad; ++i) {
+      if (r.d[r.p + i] != 0) return;
+    }
+    if (clayer_record_at(r.p + kExt, true)) r.p += kExt;
+  }
+
+  // v18 template Layer0 after a custom tag: <parent u16><active u16><dc u32>.
+  // Consume parent only when both u16s are already CLayer objects. A lone
+  // back-ref then a definition count (usual layout) stays put.
+  void skip_clayer_parent_ref(uint64_t self) {
+    if (r.p + 4 > r.d.size()) return;
+    auto a = read_u16(r.d, r.p);
+    auto b = read_u16(r.d, r.p + 2);
+    if (!a || (a & 0x8000) || a == 0x7fff || a == self) return;
+    if (!b || (b & 0x8000) || b == 0x7fff) return;
+    auto ia = slots.find(a);
+    auto ib = slots.find(b);
+    if (ia == slots.end() || ib == slots.end()) return;
+    if (ia->second.cls || ib->second.cls) return;
+    if (ia->second.name != "CLayer" || ib->second.name != "CLayer") return;
+    r.p += 2;
+  }
+
+  // Extra CLayer records past declared layer_count (v18: count=1 custom
+  // tag, then Layer0). Skip null separators; stop at the definition-list
+  // anchor. `unmatched_class_ref` only on the throwaway probe.
+  void collect_trailing_layers(std::vector<uint64_t>* slots_out,
+                               std::vector<std::pair<uint64_t, std::shared_ptr<V>>>* layers_out,
+                               bool unmatched_class_ref = false) {
+    while (r.p + 2 <= r.d.size()) {
+      auto tag = read_u16(r.d, r.p);
+      if (tag == 0) {
+        r.p += 2;
+        continue;
+      }
+      if (!clayer_record_at(r.p, unmatched_class_ref)) break;
+      auto q = object("CLayer");
+      if (std::get<2>(q)) {
+        if (slots_out) slots_out->push_back(std::get<0>(q));
+        if (layers_out) layers_out->push_back({std::get<0>(q), std::get<2>(q)});
+      }
+    }
+  }
+
   std::tuple<uint64_t, std::string, std::shared_ptr<V>> new_obj(const std::string& n) {
     auto slot = alloc({false, n, 0, {}});
     auto v = read(n, slot);
@@ -562,6 +629,8 @@ struct Archive {
         v->b = c[2];
         r.utf16();
         r.raw(21);
+        skip_clayer_colour_ext();
+        skip_clayer_parent_ref(self);
       }
     } else if (n == "CMaterial") {
       preamble();
@@ -1082,6 +1151,7 @@ std::vector<uint64_t> probe_layer_anchor_bases(const ByteBuffer& data, int ver, 
     auto q = boot.object("CLayer");
     layer_slots.push_back(std::get<0>(q));
   }
+  boot.collect_trailing_layers(&layer_slots, nullptr, true);
   auto anchor = boot.object();
   if (std::get<1>(anchor) != "premodel")
     // under the throwaway base every absolute back-ref classifies as
@@ -1151,22 +1221,7 @@ WalkResult walk_model(const ByteBuffer& data, int ver, size_t start, uint32_t ma
     layers.push_back({std::get<0>(q), std::get<2>(q)});
   }
   // trailing separators (and any layer records past the declared count)
-  {
-    auto lay_cs = ar.class_slot.find("CLayer");
-    while (ar.r.p + 2 <= data.size()) {
-      auto tag = read_u16(data, ar.r.p);
-      if (tag == 0) {
-        ar.r.p += 2;
-        continue;
-      }
-      if (lay_cs != ar.class_slot.end() && tag == (0x8000 | lay_cs->second)) {
-        auto q = ar.object("CLayer");
-        if (std::get<2>(q)) layers.push_back({std::get<0>(q), std::get<2>(q)});
-        continue;
-      }
-      break;
-    }
-  }
+  ar.collect_trailing_layers(nullptr, &layers);
   auto anchor = ar.object();
   if (std::get<1>(anchor) != "CLayer") throw std::runtime_error("definition anchor is not a layer");
   auto dc = ar.r.u32();
