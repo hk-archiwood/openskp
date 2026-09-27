@@ -21,8 +21,10 @@ std::string ParsedAttribute::to_string() const {
     case Kind::String:
       return text;
     case Kind::Integer:
+    case Kind::Boolean:
       return std::to_string(integer);
     case Kind::Float:
+    case Kind::Length:
       return format_double(number);
     case Kind::Vec:
       return format_double(vec[0]) + "," + format_double(vec[1]) + "," + format_double(vec[2]);
@@ -46,8 +48,10 @@ bool ParsedAttribute::operator==(const ParsedAttribute& o) const {
     case Kind::String:
       return text == o.text;
     case Kind::Integer:
+    case Kind::Boolean:
       return integer == o.integer;
     case Kind::Float:
+    case Kind::Length:
       return number == o.number;
     case Kind::Vec:
       return vec == o.vec;

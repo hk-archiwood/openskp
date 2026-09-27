@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — C++: boolean and Length attribute values keep their types through write and read
+
+The C++ writer's `AttributeValue` only had `std::string` / `std::int32_t` /
+`double`, so a SketchUp boolean had to go out as an int32 and a `Length` as
+a plain double - Python's writer already emits both natively (`bool` →
+type 7, `create.Length` → type 12). Added `AttributeBool` and
+`AttributeLength` alternatives (wrapped, so a string literal or an integer
+can never convert into them) and write them as types 7 / 12.
+
+Reading kept neither: legacy type 7 decoded as `Integer`, type 12 and VFF
+`AF38` as `Float`, and VFF `AA38` - a native boolean the VFF decoder did not
+know - as `Null`. `AA38` is real: a SketchUp 2024 file with
+`face.set_attribute("d", "is_a_face", true)` stores `A438 { AA38 01 }`.
+`ParsedAttribute` gains `Kind::Boolean` (`integer` = 1/0) and
+`Kind::Length` (`number` = inches); `A938` / type 6 stay `Float`. Both new
+kinds stringify exactly as the integer / float they used to decode to, so
+`properties`, scene, JSON and IFC output are unchanged. Python, TypeScript,
+.NET and Dart readers are not touched here.
+
 ### Changed — TypeScript: dropped Node 20 from CI/release after the vitest 5 bump
 
 Following up on the vitest 4→5 Dependabot bump (#366): vitest 5 requires

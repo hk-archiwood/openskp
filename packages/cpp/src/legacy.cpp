@@ -985,13 +985,13 @@ struct Archive {
       case 6:
         return ParsedAttribute::from_float(r.f64());
       case 7:
-        return ParsedAttribute::from_integer(r.u8());
+        return ParsedAttribute::from_boolean(r.u8() != 0);
       case 9:
         return ParsedAttribute::from_integer(static_cast<std::int64_t>(r.u32()));
       case 10:
         return ParsedAttribute::from_string(r.utf16());
       case 12:
-        return ParsedAttribute::from_float(r.f64());  // Length (a double, inches)
+        return ParsedAttribute::from_length(r.f64());  // Length (a double, inches)
       case 11: {
         auto n = r.u32();
         if (n > 100000) throw std::runtime_error("attr array too large");

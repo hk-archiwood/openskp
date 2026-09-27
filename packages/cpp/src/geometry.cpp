@@ -132,11 +132,13 @@ static bool is_prop_container_tag(const std::string& t) {
 }
 
 // A438 wraps exactly one attribute value: its payload holds a single
-// nested span whose OWN tag says the real type (AD38 string, A938/AF38
-// double, A738 int32, B438/B538 a 3xf64 point/vector, AE38 a nested
-// array) - matching Python's _decode_vff_attr_value exactly (openskp#285).
-// No native bool/time_t tag has ever been observed in real VFF data, so
-// 7/9 is the real ceiling, not an arbitrary stopping point.
+// nested span whose OWN tag says the real type (AD38 string, A938 Float /
+// AF38 Length double, A738 int32, B438/B538 a 3xf64 point/vector, AE38 a
+// nested array) - matching Python's _decode_vff_attr_value (openskp#285).
+// AA38 is a native boolean: one byte, 0/1. It was not in that table, but a
+// SketchUp 2024 file with `face.set_attribute("d", "k", true)` stores exactly
+// that (`A438 { AA38 01 }`); it used to decode as Null. Length keeps its own
+// kind so it can be written back as a Length. No time_t tag has been seen.
 //
 // Python's SkpModel.Instance.attribute_dictionaries keeps these native
 // types (`int`/`float`/`None`/3-tuple/list). C++ used to decode AND
@@ -155,7 +157,13 @@ static ParsedAttribute decode_a438_value(const ByteBuffer& p, size_t a, size_t z
     return ParsedAttribute::from_string(
         std::string(reinterpret_cast<const char*>(p.data() + sa), sz - sa));
   }
-  if ((tag == "AF38" || tag == "A938") && sz - sa == 8) {
+  if (tag == "AA38" && sz - sa == 1) {
+    return ParsedAttribute::from_boolean(p[sa] != 0);
+  }
+  if (tag == "AF38" && sz - sa == 8) {
+    return ParsedAttribute::from_length(read_f64(p, sa));
+  }
+  if (tag == "A938" && sz - sa == 8) {
     return ParsedAttribute::from_float(read_f64(p, sa));
   }
   if (tag == "A738" && sz - sa == 4) {
