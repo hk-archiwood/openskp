@@ -25,6 +25,44 @@ know - as `Null`. `AA38` is real: a SketchUp 2024 file with
 kinds stringify exactly as the integer / float they used to decode to, so
 `properties`, scene, JSON and IFC output are unchanged. Python, TypeScript,
 .NET and Dart readers are not touched here.
+### Fixed — Python: legacy definition names could fail to anchor when the GUID prefix runs shorter than expected
+
+`_read_definition` reads a 16-byte GUID immediately followed by the name
+string's marker; some files skew that fixed width. SketchUp 2020 files
+carrying 2 extra bytes ahead of the GUID were already handled by scanning
+forward. Reported (openskp#377, with an excellent, self-diagnosed writeup
+and a verified fix from the reporter): a definition imported from DWG in a
+SketchUp 2018 file skews the *other* way - the prefix runs shorter, so the
+marker sits a few bytes *before* the assumed position, which the
+forward-only scan couldn't find, aborting the whole parse. The scan is now
+symmetric (nearest offset first, in both directions), extracted into a
+directly unit-tested `_reanchor_on_string_marker` helper. Verified by the
+reporter against the real SketchUp SDK's own output (glTF bounding boxes
+matched on every axis) and their own real-file regression corpus, which is
+unaffected since the fallback only ever runs where the strict read would
+otherwise raise.
+
+TypeScript/.NET/Dart carry the identical forward-only scan (confirmed by
+inspection) and would hit the same failure mode on an equivalently-skewed
+file - not yet ported, tracked in openskp#285. C++'s legacy reader has no
+equivalent mechanism at all; unclear yet whether it needs one or already
+handles both files' layout some other way - needs its own look.
+### Fixed — Python: legacy V6 files with attribute dictionaries failed to parse
+
+Part of openskp#284's version-compatibility sweep: a SketchUp 6 file's
+`CAttributeNamed` record has no trailing field, unlike v7+ - but
+`_read_attr_named` read one unconditionally. On a file with any attribute
+dictionary (e.g. a nested group's custom attributes), that phantom
+4-byte read silently ate into the next sibling's own tag, which didn't
+raise there - it surfaced many reads later, deep in the object graph, as
+an unrelated `back-ref to unwalked slot N` error (the same
+misleading-error-site pattern as the V7/V8/2013 GUID bug fixed in #310,
+but a distinct cause: `CAttributeNamed`'s class is always learned from
+the unwalked pre-model region, so its schema is never observed and can't
+gate this the way the instance-GUID fix did). Gated the trailing read on
+`ar.ver >= 7` instead, confirmed against a real SketchUp-6-downgraded
+fixture and cross-checked for no regression on the existing v7/2014
+fixtures.
 
 ### Changed — TypeScript: dropped Node 20 from CI/release after the vitest 5 bump
 
