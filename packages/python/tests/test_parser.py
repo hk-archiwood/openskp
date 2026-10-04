@@ -1279,7 +1279,7 @@ class TestVffConstructionGeometry:
 
 
 class TestStyles:
-    """Face colors from styles/*/style.xml (items 4000 front / 4001 back)."""
+    """Face colors from styles/*/style.xml (items 2002 front / 2003 back)."""
 
     def test_style_colors_via_synthetic_skp(self, tmp_path: pathlib.Path) -> None:
         import io
@@ -1290,8 +1290,8 @@ class TestStyles:
 <styleDocument xmlns="http://sketchup.google.com/schemas/sketchup/1.0/style"
                xmlns:sty="http://sketchup.google.com/schemas/sketchup/1.0/style">
   <sty:style xmlns:t="http://sketchup.google.com/schemas/1.0/types" name="Verde">
-    <sty:item id="4000"><t:variant type="4">-3552052</t:variant></sty:item>
-    <sty:item id="4001"><t:variant type="4">-3093050</t:variant></sty:item>
+    <sty:item id="2002"><t:variant type="4">-3552052</t:variant></sty:item>
+    <sty:item id="2003"><t:variant type="4">-3093050</t:variant></sty:item>
   </sty:style>
 </styleDocument>
 """
@@ -2189,7 +2189,7 @@ class TestModernRealFile:
         assert len(model.styles) == 2
         assert model.styles[0].name == "[Construction Documentation Style]"
         assert model.styles[0].front_color == (255, 255, 255)
-        assert model.styles[0].back_color == (189, 209, 208)
+        assert model.styles[0].back_color == (164, 178, 187)
 
         # NOTE: build_scene()/mesh_index is deliberately NOT asserted here.
         # Adding this fixture surfaced a real, pre-existing bug: triangulating

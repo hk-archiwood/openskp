@@ -940,8 +940,8 @@ export function parseMaterialXml(xmlText: string): {
 
 /**
  * Parse a styles/*\/style.xml document: face colors live as signed-int32
- * ABGR variants under item id 4000 (front / default face color) and 4001
- * (back face color). Viewers need them to shade unpainted faces the way
+ * ABGR variants under item id 2002 (front / default face color) and 2003
+ * (back face color). The 4000-series items are background/sky/ground. Viewers need them to shade unpainted faces the way
  * SketchUp does.
  */
 export function parseStyleXml(xmlText: string): {
@@ -961,7 +961,7 @@ export function parseStyleXml(xmlText: string): {
   let m: RegExpExecArray | null;
   while ((m = itemRegex.exec(xmlText)) !== null) {
     const id = m[1] !== undefined ? m[1] : m[2];
-    if (id !== '4000' && id !== '4001') continue;
+    if (id !== '2002' && id !== '2003') continue;
     const inner = m[3];
     const variantMatch = inner.match(/<(?:[a-zA-Z0-9_]+:)?variant\b[^>]*>(-?\d+)<\/(?:[a-zA-Z0-9_]+:)?variant>/);
     if (!variantMatch) continue;
@@ -973,8 +973,8 @@ export function parseStyleXml(xmlText: string): {
 
   return {
     name,
-    frontColor: colors['4000'] ?? null,
-    backColor: colors['4001'] ?? null,
+    frontColor: colors['2002'] ?? null,
+    backColor: colors['2003'] ?? null,
   };
 }
 

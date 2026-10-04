@@ -828,7 +828,7 @@ class Geometry {
     for (final item in styleEl.findElements('item', namespaceUri: _styleNs)) {
       final iid = item.getAttribute('id');
       final variant = item.getElement('variant', namespaceUri: _typesNs);
-      if ((iid == '4000' || iid == '4001') &&
+      if ((iid == '2002' || iid == '2003') &&
           variant != null &&
           variant.innerText.isNotEmpty) {
         final signed = int.tryParse(variant.innerText);
@@ -841,8 +841,8 @@ class Geometry {
 
     return RawStyle(
       name: styleEl.getAttribute('name') ?? '',
-      frontColor: colors['4000'],
-      backColor: colors['4001'],
+      frontColor: colors['2002'],
+      backColor: colors['2003'],
     );
   }
 }
