@@ -941,8 +941,8 @@ export function parseMaterialXml(xmlText: string): {
 /**
  * Parse a styles/*\/style.xml document: face colors live as signed-int32
  * ABGR variants under item id 2002 (front / default face color) and 2003
- * (back face color). The 4000-series items are background/sky/ground. Viewers need them to shade unpainted faces the way
- * SketchUp does.
+ * (back face color); the 4000-series items are background/sky/ground.
+ * Viewers need them to shade unpainted faces the way SketchUp does.
  */
 export function parseStyleXml(xmlText: string): {
   name: string;

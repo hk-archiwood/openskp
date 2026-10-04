@@ -1627,8 +1627,8 @@ def full_parse(skp_path: str) -> Dict[str, Any]:
 
     # Styles: face colors live in styles/*/style.xml as signed-int32 ABGR
     # variants — item id 2002 is the front (default) face color, 2003 the
-    # back face color (the 4000-series items are background/sky/ground). Viewers need them to shade unpainted faces the way
-    # SketchUp does (an author may e.g. set a green back color so unpainted
+    # back face color (the 4000-series items are background/sky/ground).
+    # Viewers need them to shade unpainted faces the way SketchUp does (an author may e.g. set a green back color so unpainted
     # garden faces read as grass).
     styles = []
     for name in zf.namelist():
