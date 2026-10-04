@@ -114,6 +114,16 @@ TEST(Parser, ModernUntitled) {
   EXPECT_EQ(model.styles[0].name, "[Construction Documentation Style]");
   EXPECT_EQ(model.styles[0].front_color, (Color3{255, 255, 255}));
   EXPECT_EQ(model.styles[0].back_color, (Color3{164, 178, 187}));
+  EXPECT_EQ(model.styles[0].description,
+            "[Default face colors. Profile Edges. White background.]");
+  // Every style.xml item is kept raw, keyed by SketchUp's item id.
+  EXPECT_EQ(model.styles[0].items.size(), 58u);
+  ASSERT_TRUE(model.styles[0].items.count(1007));
+  EXPECT_EQ(model.styles[0].items.at(1007).type, 4);
+  EXPECT_EQ(model.styles[0].items.at(1007).value, "2");
+  ASSERT_TRUE(model.styles[0].items.count(2008));
+  EXPECT_EQ(model.styles[0].items.at(2008).type, 7);
+  EXPECT_EQ(model.styles[0].items.at(2008).value, "0.65000000000000002");
 
   // Instance layer/properties (item 17): populated from each instance's
   // own D207 (layer override)/DC05 (dynamic properties) TLV children -

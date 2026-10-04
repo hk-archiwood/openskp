@@ -211,7 +211,55 @@ All five languages produce equivalent structured output for the same file:
 | `root` (all five languages - `model.root()` is a method in C++, a plain field/property elsewhere) | — | The implicit top-level definition — see the [Developer Guide](DEVELOPER_GUIDE.md#the-root-definition) |
 | `layers` | list | Layer names + RGB colors |
 | `materials` | list | Material names, colors, transparency, optional embedded texture |
-| `styles` | list | Named front/back face colors for unpainted faces |
+| `styles` | list | Named front/back face colors for unpainted faces; C++ also exposes the style description and every raw style.xml item (see [Style items](#style-items)) |
+
+### Style items
+
+Each `styles/*/style.xml` holds a style's display settings as `<sty:item id="N">`
+elements, each wrapping one `<t:variant type="T">` value. The C++ `Style` exposes all
+of them unparsed as `items` (item id → `{type, value}`, value trimmed, nested XML kept
+verbatim), plus the `desc` attribute as `description`, so callers can map the settings
+they understand. Other languages can follow the same shape.
+
+Variant types seen in real files: 1 bool (`0`/`1`), 3/4 int32, 5 color in older files
+(current SketchUp writes colors as type 4), 6 float, 7 double, 13 nested XML (watermark
+list). Colors are signed int32 ABGR: R in the low byte, alpha in the high byte.
+
+Item ids are SketchUp's own and undocumented. The ones below were confirmed against
+SketchUp 2026 by giving every `Sketchup::RenderingOptions` key a distinct value,
+updating the style, saving, and matching the saved items back:
+
+| Ids | `RenderingOptions` key |
+|---|---|
+| 1000 / 1001 / 1002 | `EdgeDisplayMode` / `EdgeType` / `EdgeColorMode` |
+| 1004 / 1005 | `ExtendLines` / `LineExtension` |
+| 1006 / 1007 | `DrawSilhouettes` / `SilhouetteWidth` |
+| 1008 / 1009 | `DrawDepthQue` / `DepthQueWidth` |
+| 1010 / 1011 | `DrawLineEnds` / `LineEndWidth` |
+| 1012 / 1014 / 1015 | `JitterEdges` / `ForegroundColor` / `DrawBackEdges` |
+| 2001 | `RenderMode` |
+| 2002 / 2003 | `FaceFrontColor` / `FaceBackColor` |
+| 2004 / 2005 | `ModelTransparency` / `MaterialTransparency` |
+| 2006 / 2007 | `TransparencySort` (0 Faster, 2 Nicer) / `Texture` |
+| 4000 / 4001 / 4002 | `BackgroundColor` / `SkyColor` / `DrawHorizon` |
+| 4003 / 4004 / 4005 | `GroundColor` / `DrawGround` / `GroundTransparency` |
+| 4006 / 4007 | `DrawUnderground` / `HorizonColor` |
+| 5000 | `DisplayWatermarks` |
+| 7000 / 7001 / 7002 | `HighlightColor` / `LockedColor` / `ConstructionColor` |
+| 7003 / 7004 | `SectionActiveColor` / `SectionInactiveColor` |
+| 7005 / 7016 | `SectionDefaultCutColor` / `SectionDefaultFillColor` |
+| 7008 / 7011 / 7012 | `DisplaySketchAxes` / `DisplayColorByLayer` / `HideConstructionGeometry` |
+| 7010 | `DrawHidden` (pre-2020 key: hidden geometry or hidden objects) |
+| 7013 | bit mask: bit 0 `DisplaySectionPlanes`, bit 1 `DisplaySectionCuts` |
+| 7014 / 7015 | `SectionCutWidth` / `SectionCutFilled` |
+| 7017 / 7018 | `DrawHiddenGeometry` / `DrawHiddenObjects` |
+| 8100 / 8102 / 8103 | `AmbientOcclusion` / `AmbientOcclusionDistance` / `AmbientOcclusionIntensity` |
+| 8105 / 8106 / 8107 | `AmbientOcclusionColorEnabled` / `AmbientOcclusionColor` / `AmbientOcclusionMultiplier` |
+
+Items that are not `RenderingOptions` keys, matched against the Styles panel instead:
+1016 edge dashes, 2008 X-ray opacity (0–1), 8001 / 8003 Match Photo background /
+foreground opacity (0–1); 8000 / 8002 are by adjacency the background / foreground
+photo shown flags.
 
 `buildScene()`'s result adds:
 

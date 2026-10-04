@@ -211,24 +211,39 @@ std::optional<RawStyle> style_xml(const ByteBuffer& bytes) {
   if (!std::regex_search(xml, m, st)) return {};
   RawStyle o;
   o.name = attr(m[1].str(), "name");
+  o.description = attr(m[1].str(), "desc");
   std::regex item(
       "<(?:[A-Za-z_][\\w.-]*:)?item\\b([^>]*)>([\\s\\S]*?)</(?:[A-Za-z_][\\w.-]*:)?item>",
       std::regex::icase);
+  std::regex vr(
+      "<(?:[A-Za-z_][\\w.-]*:)?variant\\b([^>]*)>([\\s\\S]*?)</(?:[A-Za-z_][\\w.-]*:)?variant>",
+      std::regex::icase);
   for (auto i = std::sregex_iterator(xml.begin(), xml.end(), item); i != std::sregex_iterator();
        ++i) {
-    auto id = attr((*i)[1].str(), "id");
-    if (id != "2002" && id != "2003") continue;
-    std::regex vr("<(?:[A-Za-z_][\\w.-]*:)?variant[^>]*>\\s*(-?\\d+)", std::regex::icase);
+    auto id = integer(attr((*i)[1].str(), "id"), -1);
+    if (id < 0) continue;
     std::smatch v;
     auto body = (*i)[2].str();
-    if (std::regex_search(body, v, vr)) {
-      auto n = static_cast<std::uint32_t>(std::stoll(v[1].str()));
-      Color3 c{std::uint8_t(n), std::uint8_t(n >> 8), std::uint8_t(n >> 16)};
-      if (id == "2002")
-        o.front_color = c;
-      else
-        o.back_color = c;
+    if (!std::regex_search(body, v, vr)) continue;
+    StyleItem it;
+    it.type = integer(attr(v[1].str(), "type"), 0);
+    it.value = v[2].str();
+    auto first = it.value.find_first_not_of(" \t\r\n");
+    auto last = it.value.find_last_not_of(" \t\r\n");
+    it.value =
+        first == std::string::npos ? std::string{} : it.value.substr(first, last - first + 1);
+    // Faces: 2002 front, 2003 back, as signed-int32 ABGR (R in the low byte);
+    // variant type 4 in current SketchUp, 5 in older files.
+    // The 4000-series items are background/sky/ground, not face colors.
+    if (id == 2002 || id == 2003) {
+      try {
+        auto n = static_cast<std::uint32_t>(std::stoll(it.value));
+        Color3 c{std::uint8_t(n), std::uint8_t(n >> 8), std::uint8_t(n >> 16)};
+        (id == 2002 ? o.front_color : o.back_color) = c;
+      } catch (...) {
+      }
     }
+    o.items[id] = std::move(it);
   }
   return o;
 }

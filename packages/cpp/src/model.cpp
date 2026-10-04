@@ -246,7 +246,9 @@ SkpModel build_model(RawParsed&& p, const ParseOptions& o) {
       m.material_indices_[v.first] = i;
     }
   }
-  for (auto& s : p.styles) m.styles.push_back({std::move(s.name), s.front_color, s.back_color});
+  for (auto& s : p.styles)
+    m.styles.push_back({std::move(s.name), std::move(s.description), s.front_color, s.back_color,
+                        std::move(s.items)});
   return m;
 }
 }  // namespace openskp
