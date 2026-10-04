@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — C++: every style.xml item and the style description
+
+`Style` only carried the two face colors. It now also has `description`
+(the style's `desc` attribute) and `items`: every `<sty:item>` kept raw as
+`StyleItem {type, value}`, keyed by item id, so a caller can read the rest
+of a style's display settings (edge widths, X-ray opacity, section and
+selection colors, ...). Face colors also accept variant type 5, which
+older files use. `docs/API_DESIGN.md` documents the shape for the other
+languages and the item id → `RenderingOptions` key table, confirmed
+against SketchUp 2026.
+
 ### Fixed — All languages: style face colors read from the wrong items, with R and B swapped
 
 `styles[].front_color` / `back_color` came from style.xml items 4000/4001,
