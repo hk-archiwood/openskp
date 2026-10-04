@@ -233,6 +233,31 @@ std::optional<RawStyle> style_xml(const ByteBuffer& bytes) {
   return o;
 }
 
+// A view camera (34BC), laid out as in a scene (see parse_pages): 34BD eye,
+// 34BE target, 34BF up (3 x f64, inches), 34C4 field of view (degrees), 34C2
+// u8 perspective flag (00 = parallel), 34C3 f64 visible height when parallel.
+std::optional<ViewCamera> view_camera(const ByteBuffer& record) {
+  std::optional<Vec3> eye, target, up;
+  ViewCamera cam;
+  auto vec = [](const ByteBuffer& v) -> std::optional<Vec3> {
+    if (v.size() != 24) return std::nullopt;
+    return Vec3{read_f64(v, 0), read_f64(v, 8), read_f64(v, 16)};
+  };
+  for (auto& [tag, v] : parse_flat(record)) {
+    if (tag == "BD34") eye = vec(v);
+    else if (tag == "BE34") target = vec(v);
+    else if (tag == "BF34") up = vec(v);
+    else if (tag == "C434" && v.size() == 8) cam.fov = read_f64(v, 0);
+    else if (tag == "C234" && !v.empty()) cam.parallel = v[0] == 0;
+    else if (tag == "C334" && v.size() == 8) cam.ortho_height = read_f64(v, 0);
+  }
+  if (!eye || !target) return std::nullopt;
+  cam.eye = *eye;
+  cam.target = *target;
+  if (up) cam.up = *up;
+  return cam;
+}
+
 // VFF model.dat wraps the file's definition list inside container tags
 // F901 -> 7017 -> 7117 -> 7C15. We unwrap this container into individual
 // 7C15 headers upfront so memory is bounded to one definition at a time,
@@ -392,6 +417,10 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
         continue;
       }
       tag = one[0].tag;
+      // The model's current view: FA01 > 34BC.
+      if (tag == "FA01")
+        for (auto& [t, record] : parse_flat(one[0].payload))
+          if (t == "BC34") p.camera = view_camera(record);
       collect_layers(one, p.layer_id_to_name, p.layer_hidden);
       collect_material_ids(one, p.material_id_to_name);
       collect_definitions(one, p.definitions);

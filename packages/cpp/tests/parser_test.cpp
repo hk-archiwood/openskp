@@ -115,6 +115,15 @@ TEST(Parser, ModernUntitled) {
   EXPECT_EQ(model.styles[0].front_color, (Color3{255, 255, 255}));
   EXPECT_EQ(model.styles[0].back_color, (Color3{208, 209, 189}));
 
+  // The view the model was saved with (FA01 > 34BC), independent of scenes.
+  ASSERT_TRUE(model.camera.has_value());
+  EXPECT_NEAR(model.camera->eye[0], 452.09, 0.01);
+  EXPECT_NEAR(model.camera->eye[1], -974.12, 0.01);
+  EXPECT_NEAR(model.camera->eye[2], 367.93, 0.01);
+  EXPECT_NEAR(model.camera->target[0], 226.24, 0.01);
+  EXPECT_FALSE(model.camera->parallel);
+  EXPECT_DOUBLE_EQ(model.camera->fov, 35.0);
+
   // Instance layer/properties (item 17): populated from each instance's
   // own D207 (layer override)/DC05 (dynamic properties) TLV children -
   // C++ was already correct here (the reference the other 4 languages
