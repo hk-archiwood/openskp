@@ -263,6 +263,23 @@ struct StyleItem {
   std::string value;
 };
 
+/// One watermark of a style (style.xml item 5001, a `<screenimage>`), in
+/// file order. The "<MODEL SPACE>" separator entry is not included.
+struct StyleWatermark {
+  /// Watermark name.
+  std::string name;
+  /// Raw `<screenimage>` attributes, entity-decoded: e.g. `position`,
+  /// `scale`, `alphaScale` (blend), `tiled`, `stretched`, `maintainAR`,
+  /// `background`.
+  std::map<std::string, std::string> attributes;
+  /// Image path inside the SKP ZIP (e.g. "watermarks/Watermark1.jpg").
+  std::string image_path;
+  /// Original image file name.
+  std::string file_name;
+  /// Raw image file bytes, when the ZIP has the entry.
+  std::optional<ByteBuffer> image;
+};
+
 /// Bundled rendering style settings.
 struct Style {
   /// Style name.
@@ -277,6 +294,8 @@ struct Style {
   /// width, 2008 X-ray opacity). Ids are SketchUp's own and undocumented;
   /// callers map the ones they understand.
   std::map<int, StyleItem> items;
+  /// Watermarks parsed from item 5001, with their image bytes.
+  std::vector<StyleWatermark> watermarks;
 };
 
 /// Component or group placement instance within a definition.

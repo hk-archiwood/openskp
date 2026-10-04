@@ -30,6 +30,32 @@ void ExpectConnectedNormalizedLoops(const Definition& definition) {
   }
 }
 
+// Style watermarks (style.xml item 5001): the "<MODEL SPACE>" separator is
+// skipped, attributes are entity-decoded, and the image bytes come from the
+// ZIP entry the watermark names. The fixture is SU_File.skp with one
+// watermark and a 1x1 PNG added to both of its styles.
+TEST(Parser, StyleWatermarks) {
+  auto model = SkpFile::open(test::fixture("style_watermark.skp")).parse();
+  ASSERT_FALSE(model.styles.empty());
+  for (const auto& style : model.styles) {
+    ASSERT_EQ(style.watermarks.size(), 1u);
+    const auto& w = style.watermarks[0];
+    EXPECT_EQ(w.name, "Logo & Co");
+    EXPECT_EQ(w.image_path, "watermarks/Logo.png");
+    EXPECT_EQ(w.file_name, "logo.png");
+    EXPECT_EQ(w.attributes.count("name"), 0u);
+    EXPECT_EQ(w.attributes.at("position"), "2");
+    EXPECT_EQ(w.attributes.at("alphaScale"), "0.75");
+    EXPECT_EQ(w.attributes.at("scale"), "0.3");
+    EXPECT_EQ(w.attributes.at("background"), "1");
+    ASSERT_TRUE(w.image.has_value());
+    ASSERT_EQ(w.image->size(), 70u);
+    EXPECT_EQ((*w.image)[1], 'P');  // PNG signature
+    EXPECT_EQ((*w.image)[2], 'N');
+    EXPECT_EQ((*w.image)[3], 'G');
+  }
+}
+
 TEST(Parser, ModernUntitled) {
   auto model = SkpFile::open(test::fixture("Untitled.skp")).parse();
   EXPECT_EQ(model.version, "{25.0.575}");
@@ -124,6 +150,8 @@ TEST(Parser, ModernUntitled) {
   ASSERT_TRUE(model.styles[0].items.count(2008));
   EXPECT_EQ(model.styles[0].items.at(2008).type, 7);
   EXPECT_EQ(model.styles[0].items.at(2008).value, "0.65000000000000002");
+  // Item 5001 lists no watermarks here (only the "<MODEL SPACE>" separator).
+  EXPECT_TRUE(model.styles[0].watermarks.empty());
 
   // Instance layer/properties (item 17): populated from each instance's
   // own D207 (layer override)/DC05 (dynamic properties) TLV children -

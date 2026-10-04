@@ -256,6 +256,16 @@ updating the style, saving, and matching the saved items back:
 | 8100 / 8102 / 8103 | `AmbientOcclusion` / `AmbientOcclusionDistance` / `AmbientOcclusionIntensity` |
 | 8105 / 8106 / 8107 | `AmbientOcclusionColorEnabled` / `AmbientOcclusionColor` / `AmbientOcclusionMultiplier` |
 
+Watermarks are item 5001, a nested `<wmlist>` of `<screenimage>` entries. The C++
+`Style::watermarks` lists them in file order, each with its name, every other attribute
+raw (entity-decoded), the image's path inside the SKP ZIP, its original file name, and
+the image bytes read from that ZIP entry. The `<MODEL SPACE>` entry is a separator
+between under- and overlays and is skipped. Attributes seen in SketchUp 2026:
+`stretched` / `tiled` (1 when that display mode is on; neither means positioned),
+`position` (3x3 grid numbered row by row, 0 top-left .. 4 center .. 8 bottom-right),
+`scale` (0–1), `alphaScale` (the Blend slider, 0–1), `maintainAR` (stretched mode's
+aspect lock), `background` (1 = drawn behind the model).
+
 Items that are not `RenderingOptions` keys, matched against the Styles panel instead:
 1016 edge dashes, 2008 X-ray opacity (0–1), 8001 / 8003 Match Photo background /
 foreground opacity (0–1); 8000 / 8002 are by adjacency the background / foreground

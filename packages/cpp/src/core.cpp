@@ -204,6 +204,42 @@ std::shared_ptr<RawMaterial> material_xml(Zip& zip, const std::string& path,
   return out;
 }
 
+// Every `name="value"` attribute of a tag's attribute text, entity-decoded.
+std::map<std::string, std::string> attributes(const std::string& s) {
+  std::map<std::string, std::string> out;
+  std::regex r("([A-Za-z_][\\w.:-]*)\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')");
+  for (auto i = std::sregex_iterator(s.begin(), s.end(), r); i != std::sregex_iterator(); ++i)
+    out[(*i)[1].str()] = decode_xml_entities((*i)[2].matched ? (*i)[2].str() : (*i)[3].str());
+  return out;
+}
+
+// Watermarks of style.xml item 5001: `<screenimage>` entries, each naming its
+// image inside the SKP ZIP. Image bytes are filled in by the caller.
+std::vector<StyleWatermark> style_watermarks(const std::string& wmlist) {
+  std::vector<StyleWatermark> out;
+  std::regex si(
+      "<(?:[A-Za-z_][\\w.-]*:)?screenimage\\b([^>]*?)(?:/>|>([\\s\\S]*?)"
+      "</(?:[A-Za-z_][\\w.-]*:)?screenimage>)",
+      std::regex::icase);
+  std::regex im("<(?:[A-Za-z_][\\w.-]*:)?image\\b([^>]*)>", std::regex::icase);
+  for (auto i = std::sregex_iterator(wmlist.begin(), wmlist.end(), si);
+       i != std::sregex_iterator(); ++i) {
+    StyleWatermark w;
+    w.attributes = attributes((*i)[1].str());
+    w.attributes.erase("name");
+    w.name = attr((*i)[1].str(), "name");
+    if (w.name == "<MODEL SPACE>") continue;  // separator between under- and overlays
+    auto body = (*i)[2].str();
+    std::smatch m;
+    if (std::regex_search(body, m, im)) {
+      w.image_path = attr(m[1].str(), "path");
+      w.file_name = attr(m[1].str(), "file_name");
+    }
+    out.push_back(std::move(w));
+  }
+  return out;
+}
+
 std::optional<RawStyle> style_xml(const ByteBuffer& bytes) {
   auto xml = str(bytes);
   std::regex st("<(?:[A-Za-z_][\\w.-]*:)?style\\b([^>]*)>", std::regex::icase);
@@ -245,6 +281,8 @@ std::optional<RawStyle> style_xml(const ByteBuffer& bytes) {
     }
     o.items[id] = std::move(it);
   }
+  if (auto wm = o.items.find(5001); wm != o.items.end())
+    o.watermarks = style_watermarks(wm->second.value);
   return o;
 }
 
@@ -370,7 +408,14 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
   for (auto& n : zip.names)
     if (n.rfind("styles/", 0) == 0 && n.size() >= 9 && n.substr(n.size() - 9) == "style.xml")
       if (auto b = zip.get(n))
-        if (auto s = style_xml(*b)) p.styles.push_back(*s);
+        if (auto s = style_xml(*b)) {
+          for (auto& w : s->watermarks) {
+            auto path = w.image_path;
+            while (!path.empty() && (path[0] == '/' || path[0] == '.')) path.erase(path.begin());
+            if (!path.empty()) w.image = zip.get(path);
+          }
+          p.styles.push_back(std::move(*s));
+        }
   auto model = zip.get("model.dat");
   if (!model) throw SkpParseError("model.dat not found in ZIP container", ParseStage::zip_extract);
   auto hs = headers(*model, 0, model->size());
