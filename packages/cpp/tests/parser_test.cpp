@@ -33,15 +33,17 @@ void ExpectConnectedNormalizedLoops(const Definition& definition) {
 // Style watermarks (style.xml item 5001): the "<MODEL SPACE>" separator is
 // skipped, attributes are entity-decoded, and the image bytes come from the
 // ZIP entry the watermark names. The fixture is SU_File.skp with one
-// watermark and a 1x1 PNG added to both of its styles.
+// watermark and a 1x1 PNG added to both of its styles: the style names its
+// image relative to its own folder ("./logo.png"), the current style's "_1"
+// working copy from the ZIP root ("watermarks/Logo.png"), as SketchUp writes.
 TEST(Parser, StyleWatermarks) {
   auto model = SkpFile::open(test::fixture("style_watermark.skp")).parse();
-  ASSERT_FALSE(model.styles.empty());
+  ASSERT_EQ(model.styles.size(), 2u);
   for (const auto& style : model.styles) {
     ASSERT_EQ(style.watermarks.size(), 1u);
     const auto& w = style.watermarks[0];
     EXPECT_EQ(w.name, "Logo & Co");
-    EXPECT_EQ(w.image_path, "watermarks/Logo.png");
+    EXPECT_EQ(w.image_path, style.working_copy ? "watermarks/Logo.png" : "./logo.png");
     EXPECT_EQ(w.file_name, "logo.png");
     EXPECT_EQ(w.attributes.count("name"), 0u);
     EXPECT_EQ(w.attributes.at("position"), "2");
@@ -152,6 +154,14 @@ TEST(Parser, ModernUntitled) {
   EXPECT_EQ(model.styles[0].items.at(2008).value, "0.65000000000000002");
   // Item 5001 lists no watermarks here (only the "<MODEL SPACE>" separator).
   EXPECT_TRUE(model.styles[0].watermarks.empty());
+  // The current style is stored twice; model.dat's style catalog (0602 >
+  // 7869) names it and its "_1" working copy.
+  EXPECT_EQ(model.styles[0].folder, "[Construction Documentation Style]");
+  EXPECT_TRUE(model.styles[0].active);
+  EXPECT_FALSE(model.styles[0].working_copy);
+  EXPECT_EQ(model.styles[1].folder, "[Construction Documentation Style]_1");
+  EXPECT_FALSE(model.styles[1].active);
+  EXPECT_TRUE(model.styles[1].working_copy);
 
   // Instance layer/properties (item 17): populated from each instance's
   // own D207 (layer override)/DC05 (dynamic properties) TLV children -

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — C++: every style.xml item, the style description, and watermarks
+### Added — C++: every style.xml item, the style description, watermarks, and the current style
 
 `Style` only carried the two face colors. It now also has `description`
 (the style's `desc` attribute) and `items`: every `<sty:item>` kept raw as
@@ -15,8 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 of a style's display settings (edge widths, X-ray opacity, section and
 selection colors, ...). Face colors also accept variant type 5, which
 older files use. `watermarks` lists the style's watermarks (item 5001)
-with their raw attributes and the image bytes from the SKP ZIP; a new
-`style_watermark.skp` fixture covers it. `docs/API_DESIGN.md` documents the shape for the other
+with their raw attributes and the image bytes from the SKP ZIP, whether
+the style names the image relative to its folder or from the ZIP root; a
+new `style_watermark.skp` fixture covers both. `folder`, `active`,
+`working_copy` and `modified` come from model.dat's style catalog, so a
+caller can tell the model's current style (and its "_1" working copy with
+edits not yet updated into it) from the other styles in the file. `docs/API_DESIGN.md` documents the shape for the other
 languages and the item id → `RenderingOptions` key table, confirmed
 against SketchUp 2026.
 

@@ -272,7 +272,9 @@ struct StyleWatermark {
   /// `scale`, `alphaScale` (blend), `tiled`, `stretched`, `maintainAR`,
   /// `background`.
   std::map<std::string, std::string> attributes;
-  /// Image path inside the SKP ZIP (e.g. "watermarks/Watermark1.jpg").
+  /// Image path as the style names it: relative to the style's folder
+  /// ("./2.jpg") or, for the current style, from the ZIP root
+  /// ("watermarks/Watermark1.jpg").
   std::string image_path;
   /// Original image file name.
   std::string file_name;
@@ -296,6 +298,18 @@ struct Style {
   std::map<int, StyleItem> items;
   /// Watermarks parsed from item 5001, with their image bytes.
   std::vector<StyleWatermark> watermarks;
+  /// Folder of this style in the SKP ZIP ("styles/<folder>/style.xml").
+  std::string folder;
+  /// The model's current style in its list of styles (SketchUp's
+  /// `Styles#active_style`).
+  bool active{};
+  /// Working copy of the current style, folder "<folder>_1": the settings the
+  /// model displays, including edits not yet updated into the style. It is
+  /// not a style of its own in SketchUp's list.
+  bool working_copy{};
+  /// On the current style: edited in SketchUp without updating the style, so
+  /// the working copy differs from it.
+  bool modified{};
 };
 
 /// Component or group placement instance within a definition.

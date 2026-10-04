@@ -256,10 +256,20 @@ updating the style, saving, and matching the saved items back:
 | 8100 / 8102 / 8103 | `AmbientOcclusion` / `AmbientOcclusionDistance` / `AmbientOcclusionIntensity` |
 | 8105 / 8106 / 8107 | `AmbientOcclusionColorEnabled` / `AmbientOcclusionColor` / `AmbientOcclusionMultiplier` |
 
+A model lists several styles; SketchUp stores the current one twice, in its own folder and
+as a working copy `<folder>_1` that holds the settings the model displays (edits not yet
+updated into the style included). model.dat's style catalog (record `0602 > 7869`) names
+them: `7969` lists the styles (`6C6B` entries with a `DC05 > DE05` id and a `6F6B` name equal
+to the style's folder), `7A69` holds the current style's id, `7B69` the working copy's
+entry, and `7C69` is 1 when the current style was edited without updating it. The C++
+`Style` carries its `folder` and the flags `active` (the current style in the list),
+`working_copy`, and `modified` (on the active style).
+
 Watermarks are item 5001, a nested `<wmlist>` of `<screenimage>` entries. The C++
 `Style::watermarks` lists them in file order, each with its name, every other attribute
-raw (entity-decoded), the image's path inside the SKP ZIP, its original file name, and
-the image bytes read from that ZIP entry. The `<MODEL SPACE>` entry is a separator
+raw (entity-decoded), the image path as the style names it, its original file name, and
+the image bytes. A style names its images relative to its own folder (`./2.jpg`); the
+current style's working copy names them from the ZIP root (`watermarks/Watermark1.jpg`). The `<MODEL SPACE>` entry is a separator
 between under- and overlays and is skipped. Attributes seen in SketchUp 2026:
 `stretched` / `tiled` (1 when that display mode is on; neither means positioned),
 `position` (3x3 grid numbered row by row, 0 top-left .. 4 center .. 8 bottom-right),

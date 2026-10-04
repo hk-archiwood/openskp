@@ -248,7 +248,8 @@ SkpModel build_model(RawParsed&& p, const ParseOptions& o) {
   }
   for (auto& s : p.styles)
     m.styles.push_back({std::move(s.name), std::move(s.description), s.front_color, s.back_color,
-                        std::move(s.items), std::move(s.watermarks)});
+                        std::move(s.items), std::move(s.watermarks), std::move(s.folder), s.active,
+                        s.working_copy, s.modified});
   return m;
 }
 }  // namespace openskp

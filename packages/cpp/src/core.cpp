@@ -286,6 +286,50 @@ std::optional<RawStyle> style_xml(const ByteBuffer& bytes) {
   return o;
 }
 
+// Style catalog (model.dat record 0602 > 7869). 7969 lists the model's
+// styles as 6C6B entries (DC05 > DE05 entity id, 6F6B name = the style's
+// folder under styles/), 7A69 holds the current style's id, 7B69 the current
+// style's working copy (its own 6C6B, folder "<name>_1"), and 7C69 is 1 when
+// the current style was edited without updating it.
+struct CurrentStyle {
+  std::string folder;
+  std::string working_copy;
+  bool modified{};
+};
+
+CurrentStyle current_style(const ByteBuffer& catalog) {
+  auto field = [](const ByteBuffer& entry, const char* tag) -> std::optional<ByteBuffer> {
+    for (auto& [t, v] : parse_flat(entry))
+      if (t == tag) return v;
+    return std::nullopt;
+  };
+  std::vector<std::pair<ByteBuffer, std::string>> listed;
+  std::optional<ByteBuffer> current_id;
+  CurrentStyle out;
+  for (auto& [tag, value] : parse_flat(catalog)) {
+    if (tag == "7969") {
+      for (auto& [t, entry] : parse_flat(value)) {
+        if (t != "6C6B") continue;
+        auto name = field(entry, "6F6B");
+        auto ids = field(entry, "DC05");
+        auto id = ids ? field(*ids, "DE05") : std::nullopt;
+        if (name && id) listed.push_back({*id, str(*name)});
+      }
+    } else if (tag == "7A69") {
+      current_id = value;
+    } else if (tag == "7C69") {
+      out.modified = !value.empty() && value[0] != 0;
+    } else if (tag == "7B69") {
+      for (auto& [t, entry] : parse_flat(value))
+        if (t == "6C6B")
+          if (auto name = field(entry, "6F6B")) out.working_copy = str(*name);
+    }
+  }
+  for (auto& [id, name] : listed)
+    if (current_id && id == *current_id) out.folder = name;
+  return out;
+}
+
 // VFF model.dat wraps the file's definition list inside container tags
 // F901 -> 7017 -> 7117 -> 7C15. We unwrap this container into individual
 // 7C15 headers upfront so memory is bounded to one definition at a time,
@@ -409,10 +453,16 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
     if (n.rfind("styles/", 0) == 0 && n.size() >= 9 && n.substr(n.size() - 9) == "style.xml")
       if (auto b = zip.get(n))
         if (auto s = style_xml(*b)) {
+          if (n.size() > 17) s->folder = n.substr(7, n.size() - 17);  // styles/<folder>/style.xml
+          // A style's own images sit in its folder ("./2.jpg"); the current style's
+          // watermark images are at the ZIP root ("watermarks/Watermark1.jpg").
           for (auto& w : s->watermarks) {
             auto path = w.image_path;
-            while (!path.empty() && (path[0] == '/' || path[0] == '.')) path.erase(path.begin());
-            if (!path.empty()) w.image = zip.get(path);
+            while (path.rfind("./", 0) == 0) path.erase(0, 2);
+            while (!path.empty() && path[0] == '/') path.erase(0, 1);
+            if (path.empty()) continue;
+            for (const auto& candidate : {"styles/" + s->folder + "/" + path, path})
+              if ((w.image = zip.get(candidate))) break;
           }
           p.styles.push_back(std::move(*s));
         }
@@ -442,6 +492,7 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
   std::vector<TlvNode> page_node_owner;  // keeps page_node's subtree alive past the loop
 
   auto total = hs.size();
+  CurrentStyle current;
   for (std::size_t i = 0; i < total; ++i) {
     std::string tag;
     try {
@@ -452,6 +503,9 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
         continue;
       }
       tag = one[0].tag;
+      if (tag == "0602")
+        for (auto& [t, catalog] : parse_flat(one[0].payload))
+          if (t == "7869") current = current_style(catalog);
       collect_layers(one, p.layer_id_to_name, p.layer_hidden);
       collect_material_ids(one, p.material_id_to_name);
       collect_definitions(one, p.definitions);
@@ -475,6 +529,11 @@ RawParsed full_parse(const ByteBuffer& data, const ParseOptions& o) {
     }
     if (i % progress_interval == 0 || i + 1 == total)
       emit_progress(o, ParseStage::tlv_walk, i + 1, total);
+  }
+  for (auto& s : p.styles) {
+    s.active = !current.folder.empty() && s.folder == current.folder;
+    s.modified = s.active && current.modified;
+    s.working_copy = !current.working_copy.empty() && s.folder == current.working_copy;
   }
   // Units (meta/meta.dat) - VFF-only; legacy files carry no equivalent
   // container.
