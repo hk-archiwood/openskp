@@ -316,6 +316,16 @@ void scan_instance_transforms(const TlvNode&, std::map<std::string, std::vector<
 std::vector<RawDimension> parse_dimensions(const ByteBuffer&, const std::map<std::string, Vec3>&,
                                            const std::map<std::string, std::vector<double>>&);
 const TlvNode* find_page_node(const TlvNode&);
+// A view camera record (34BC), as scenes and the model's current view store it.
+struct RawCamera {
+  std::optional<Vec3> eye;
+  std::optional<Vec3> target;
+  std::optional<Vec3> up;
+  double fov{35.0};
+  bool parallel{};
+  double ortho_height{};
+};
+RawCamera parse_camera(const ByteBuffer& record);
 std::vector<RawPage> parse_pages(const TlvNode*);
 
 struct EarPoint {
