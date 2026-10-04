@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — C++: the model's saved view and the selected scene
+
+SketchUp reopens a file at the view it was saved with, whichever scene is
+selected and even when that scene was not updated. `SkpModel::camera` now
+carries that view (model.dat `FA01` > `34BC`, laid out like a scene camera:
+eye, target, up, field of view, parallel flag, visible height), and
+`Page::selected` marks the scene selected at save time (`6D62` beside the
+page list names it by the entity id each page carries in `6F54` > `DC05` >
+`DE05`). Verified against SketchUp 2026's own `active_view.camera` and
+`pages.selected_page` on a three-scene model; the `Untitled.skp` fixture and
+a synthetic page list cover them.
+
 ### Fixed — TypeScript: `EdgeFlagStore` could abort the process on descending edge ids (#393)
 
 `ensureSlot`'s re-base path (for an edge id below the current base) sized

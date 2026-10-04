@@ -278,6 +278,9 @@ const TlvNode* find_page_node(const TlvNode& top) {
 //   scenes carry 01 with a stale 34C3), 34C3 f64 = visible height when
 //   parallel (inches)
 // * 7150 - layers hidden in this page: (u8 length, var-int layer id) runs
+//
+// Each page's 6F54 also carries its entity id (DC05 > DE05), and 6D62 next to
+// 6D61 holds the id of the scene selected when the model was saved.
 std::vector<RawPage> parse_pages(const TlvNode* node) {
   std::vector<RawPage> pages;
   if (!node) return pages;
@@ -286,6 +289,7 @@ std::vector<RawPage> parse_pages(const TlvNode* node) {
   for (auto& it60 : t60_items) {
     if (it60.tag != 0x6d60) continue;
     auto t61_items = tlv_items_int(it60.payload);
+    auto selected_id = tlv_find_int(t61_items, 0x6d62);
     for (auto& it61 : t61_items) {
       if (it61.tag != 0x6d61) continue;
       auto t48_items = tlv_items_int(it61.payload);
@@ -302,6 +306,11 @@ std::vector<RawPage> parse_pages(const TlvNode* node) {
         auto name = tlv_find_int(head, 0x6f55);
         if (name && !name->empty()) {
           page.name.assign(reinterpret_cast<const char*>(name->data()), name->size());
+        }
+        if (selected_id) {
+          auto ids = tlv_find_int(head, 0x05dc);
+          auto id = ids ? tlv_find_int(tlv_items_int(*ids), 0x05de) : std::nullopt;
+          page.selected = id && *id == *selected_id;
         }
 
         auto cam_wrap_payload = tlv_find_int(items, 0x714a);

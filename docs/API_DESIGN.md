@@ -212,6 +212,7 @@ All five languages produce equivalent structured output for the same file:
 | `layers` | list | Layer names + RGB colors |
 | `materials` | list | Material names, colors, transparency, optional embedded texture |
 | `styles` | list | Named front/back face colors for unpainted faces |
+| `camera` (C++) | optional | The view the model was saved with (eye, target, up, field of view, parallel projection, visible height); SketchUp reopens the file at it whichever scene is selected. Scenes mark the one selected at save time (`Page::selected`) |
 
 `buildScene()`'s result adds:
 

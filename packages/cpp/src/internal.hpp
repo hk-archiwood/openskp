@@ -115,6 +115,7 @@ struct RawPage {
   bool parallel{};
   double ortho_height{};
   std::vector<EntityId> hidden_layer_ids;
+  bool selected{};
 };
 
 struct RawDimension {
@@ -149,6 +150,7 @@ struct RawParsed {
       layer_attribute_dictionaries;
   std::map<EntityId, std::string> layer_id_to_name;
   std::vector<RawPage> pages;
+  std::optional<ViewCamera> camera;
   std::vector<RawDimension> dimensions;
   std::map<EntityId, std::string> material_id_to_name;
   std::map<std::string, std::shared_ptr<RawMaterial>> materials;

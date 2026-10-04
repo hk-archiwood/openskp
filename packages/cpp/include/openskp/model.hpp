@@ -395,6 +395,25 @@ struct Page {
   double ortho_height{};
   /// Names of the layers this scene hides.
   std::vector<std::string> hidden_layers;
+  /// The scene selected when the model was saved (at most one).
+  bool selected{};
+};
+
+/// A view camera (VFF `34BC` record), as scenes and the model's current view
+/// store it.
+struct ViewCamera {
+  /// Camera position, in inches.
+  Vec3 eye{0.0, 0.0, 1.0};
+  /// Point the camera looks at, in inches.
+  Vec3 target{0.0, 0.0, 0.0};
+  /// Camera up vector.
+  Vec3 up{0.0, 0.0, 1.0};
+  /// Field of view in degrees (SketchUp default 35).
+  double fov{35.0};
+  /// True for parallel (orthographic) projection.
+  bool parallel{};
+  /// Visible height in inches when `parallel`.
+  double ortho_height{};
 };
 
 /// Reusable geometry container (component definition or group).
@@ -448,6 +467,10 @@ class OPENSKP_EXPORT SkpModel {
   /// The file's saved scenes (VFF files; classic pre-2021 files import
   /// with none).
   std::vector<Page> pages;
+  /// The view the model was saved with (VFF `FA01` > `34BC`). SketchUp reopens
+  /// the file at this view whichever scene is selected, even when the scene
+  /// was not updated. Unset for classic pre-2021 files.
+  std::optional<ViewCamera> camera;
   /// Model-level linear dimensions with world-space endpoints (VFF
   /// files). Legacy files surface text-only dimensions per definition
   /// instead (`Definition::dimensions`).

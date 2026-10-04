@@ -199,12 +199,14 @@ SkpModel build_model(RawParsed&& p, const ParseOptions& o) {
     page.fov = pg.fov;
     page.parallel = pg.parallel;
     page.ortho_height = pg.ortho_height;
+    page.selected = pg.selected;
     for (auto id : pg.hidden_layer_ids) {
       auto it = p.layer_id_to_name.find(id);
       if (it != p.layer_id_to_name.end()) page.hidden_layers.push_back(it->second);
     }
     m.pages.push_back(std::move(page));
   }
+  m.camera = p.camera;
   // Convert model-level linear dimensions (VFF; world space).
   for (auto& dm : p.dimensions) {
     Dimension dim;
