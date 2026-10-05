@@ -151,7 +151,7 @@ ByteBuffer page_record(const std::string& name, bool parallel, std::vector<int> 
   }
   auto body = test::concat({
       tlv(0x6f54, test::concat({id.empty() ? ByteBuffer{} : tlv(0x05dc, tlv(0x05de, id)),
-                                 tlv(0x6f55, test::bytes(name))})),
+                                tlv(0x6f55, test::bytes(name))})),
       tlv(0x714a, tlv(0x34bc, cam)),
       tlv(0x7150, hidden),
   });
@@ -187,11 +187,12 @@ TEST(PagesDimensions, ParsePagesSynthetic) {
 // 6D62 (beside 6D61) names the scene selected when the model was saved by the
 // entity id each page carries in 6F54 > DC05 > DE05.
 TEST(PagesDimensions, ParsePagesSelected) {
-  auto payload = tlv(0x6d60, test::concat({
-      tlv(0x6d61, test::concat({page_record("Plan", true, {}, ByteBuffer{0x38, 0x02}),
-                                page_record("3D", false, {}, ByteBuffer{0x39, 0x02})})),
-      tlv(0x6d62, ByteBuffer{0x39, 0x02}),
-  }));
+  auto payload = tlv(
+      0x6d60, test::concat({
+                  tlv(0x6d61, test::concat({page_record("Plan", true, {}, ByteBuffer{0x38, 0x02}),
+                                            page_record("3D", false, {}, ByteBuffer{0x39, 0x02})})),
+                  tlv(0x6d62, ByteBuffer{0x39, 0x02}),
+              }));
   TlvNode node;
   node.tag = "0702";
   node.payload = payload;
