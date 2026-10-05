@@ -24,6 +24,23 @@ edits not yet updated into it) from the other styles in the file. `docs/API_DESI
 languages and the item id → `RenderingOptions` key table, confirmed
 against SketchUp 2026.
 
+### Fixed — all five ports: legacy textures that carry an attribute dictionary failed to parse (#396)
+
+A texture is an entity in its own right, so right after a material's
+"has texture" flag it opens with the standard entity preamble: an
+attribute-container reference and, from v17 on, the persistent-id mask.
+`texture_block` skipped a fixed 1/2-byte pad there, which is only right
+when the reference is null. Render plugins (Rayscaper, per the report)
+store a dictionary on the texture itself, so those files died with
+`texture size block misaligned` (C++) / `texture object is not a dib`
+(Python) - the same error text as the still-open V4/V5 signature in #284,
+though that one remains uninvestigated. All five readers now step back over
+the flag's high byte and call the existing preamble reader; for a texture
+without attributes this consumes exactly the same bytes as before.
+New Python regression test (`test_legacy_texture_attributes.py`) patches the
+writer to emit a real container on a texture - the byte shape of the
+reporter's private files - and fails with the reported error on the previous
+code.
 ### Fixed — All languages: style face colors read from the wrong items, with R and B swapped
 
 `styles[].front_color` / `back_color` came from style.xml items 4000/4001,
