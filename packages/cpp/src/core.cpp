@@ -222,8 +222,8 @@ std::vector<StyleWatermark> style_watermarks(const std::string& wmlist) {
       "</(?:[A-Za-z_][\\w.-]*:)?screenimage>)",
       std::regex::icase);
   std::regex im("<(?:[A-Za-z_][\\w.-]*:)?image\\b([^>]*)>", std::regex::icase);
-  for (auto i = std::sregex_iterator(wmlist.begin(), wmlist.end(), si);
-       i != std::sregex_iterator(); ++i) {
+  for (auto i = std::sregex_iterator(wmlist.begin(), wmlist.end(), si); i != std::sregex_iterator();
+       ++i) {
     StyleWatermark w;
     w.attributes = attributes((*i)[1].str());
     w.attributes.erase("name");
