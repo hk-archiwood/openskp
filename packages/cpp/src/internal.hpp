@@ -102,8 +102,15 @@ struct RawMaterial {
 
 struct RawStyle {
   std::string name;
+  std::string description;
   std::optional<Color3> front_color;
   std::optional<Color3> back_color;
+  std::map<int, StyleItem> items;
+  std::vector<StyleWatermark> watermarks;
+  std::string folder;
+  bool active{};
+  bool working_copy{};
+  bool modified{};
 };
 
 struct RawPage {
