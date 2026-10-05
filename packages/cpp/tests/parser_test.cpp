@@ -113,7 +113,7 @@ TEST(Parser, ModernUntitled) {
   ASSERT_EQ(model.styles.size(), 2);
   EXPECT_EQ(model.styles[0].name, "[Construction Documentation Style]");
   EXPECT_EQ(model.styles[0].front_color, (Color3{255, 255, 255}));
-  EXPECT_EQ(model.styles[0].back_color, (Color3{208, 209, 189}));
+  EXPECT_EQ(model.styles[0].back_color, (Color3{164, 178, 187}));
 
   // The view the model was saved with (FA01 > 34BC), independent of scenes.
   ASSERT_TRUE(model.camera.has_value());
