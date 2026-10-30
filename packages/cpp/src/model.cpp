@@ -126,7 +126,9 @@ std::map<EntityId, const Material*> SkpModel::materials_by_id() const {
   return result;
 }
 
-static Definition definition(EntityId id, RawDefinition&& r) {
+// Takes the raw definition by value so its builder maps are freed as soon as this one is
+// converted: holding every raw definition until build_model returns doubles peak memory.
+static Definition definition(EntityId id, RawDefinition r) {
   Definition d;
   d.id = id;
   d.guid = std::move(r.guid);

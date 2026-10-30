@@ -347,7 +347,6 @@ void collect_geometry(const std::vector<TlvNode>& es, GeometryBuilder& b) {
       RawInstance i;
       i.offset = e.offset;
       i.id = entity_id(e);
-      i.children = e.children;
       auto* g = find_node(e.children, "6819");
       if (g && g->payload.size() == 16) i.ref_guid = hex(g->payload);
       auto* r = find_node(e.children, "6719");
